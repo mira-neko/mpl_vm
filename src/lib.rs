@@ -29,7 +29,7 @@ pub enum Error {
 }
 
 impl<F: FnMut() -> Option<f64>> State<F> {
-    fn new(input: F, debug: bool) -> State<F> {
+    pub fn new(input: F, debug: bool) -> State<F> {
         State {
             stack: Vec::new(),
             call_stack: Vec::new(),
