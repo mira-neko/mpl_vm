@@ -10,7 +10,7 @@ pub struct State<F: FnMut() -> Option<f64>> {
     call_stack: Vec<usize>,
     array: [f64; 256],
     ap: u8,
-    input: Box<F>,
+    input: F,
     debug: bool,
 }
 
@@ -28,19 +28,25 @@ pub enum Error {
     InputFailed,
 }
 
+impl<F: FnMut() -> Option<f64>> State<F> {
+    fn new(input: F, debug: bool) -> State<F> {
+        State {
+            stack: Vec::new(),
+            call_stack: Vec::new(),
+            array: [0.; 256],
+            ap: 0,
+            ip: 0,
+            input,
+            debug,
+        }
+    }
+}
+
 impl<F: FnMut() -> Option<f64>> From<(Vec<Instructions>, F)> for Program<F> {
     fn from((program, input): (Vec<Instructions>, F)) -> Program<F> {
         Program {
             program,
-            state: State {
-                stack: Vec::new(),
-                call_stack: Vec::new(),
-                array: [0.; 256],
-                ap: 0,
-                ip: 0,
-                input: Box::new(input),
-                debug: false,
-            },
+            state: State::new(input, false),
             finished: false,
         }
     }
@@ -50,15 +56,7 @@ impl<F: FnMut() -> Option<f64>> From<(Vec<Instructions>, F, bool)> for Program<F
     fn from((program, input, debug): (Vec<Instructions>, F, bool)) -> Program<F> {
         Program {
             program,
-            state: State {
-                stack: Vec::new(),
-                call_stack: Vec::new(),
-                array: [0.; 256],
-                ap: 0,
-                ip: 0,
-                input: Box::new(input),
-                debug,
-            },
+            state: State::new(input, debug),
             finished: false,
         }
     }
