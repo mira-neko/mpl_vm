@@ -1,23 +1,16 @@
 mod instruction;
+mod state;
 
 pub use instruction::Instructions;
+pub use state::State;
 use std::fmt;
 
-#[derive(Debug, Clone)]
-pub struct State<F: FnMut() -> Option<f64>> {
-    ip: usize,
-    stack: Vec<f64>,
-    call_stack: Vec<usize>,
-    array: [f64; 256],
-    ap: u8,
-    input: F,
-    debug: bool,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Program<F: FnMut() -> Option<f64>> {
     program: Vec<Instructions>,
-    state: State<F>,
+    state: State,
+    input: F,
+    debug: bool,
     finished: bool,
 }
 
@@ -28,26 +21,14 @@ pub enum Error {
     InputFailed,
 }
 
-impl<F: FnMut() -> Option<f64>> State<F> {
-    pub fn new(input: F, debug: bool) -> State<F> {
-        State {
-            stack: Vec::new(),
-            call_stack: Vec::new(),
-            array: [0.; 256],
-            ap: 0,
-            ip: 0,
-            input,
-            debug,
-        }
-    }
-}
-
 impl<F: FnMut() -> Option<f64>> From<(Vec<Instructions>, F)> for Program<F> {
     fn from((program, input): (Vec<Instructions>, F)) -> Program<F> {
         Program {
             program,
-            state: State::new(input, false),
+            state: State::default(),
             finished: false,
+            input,
+            debug: false,
         }
     }
 }
@@ -56,8 +37,10 @@ impl<F: FnMut() -> Option<f64>> From<(Vec<Instructions>, F, bool)> for Program<F
     fn from((program, input, debug): (Vec<Instructions>, F, bool)) -> Program<F> {
         Program {
             program,
-            state: State::new(input, debug),
+            state: State::default(),
             finished: false,
+            input,
+            debug,
         }
     }
 }
@@ -75,7 +58,9 @@ impl<F: FnMut() -> Option<f64>> Iterator for Program<F> {
 
     fn next(&mut self) -> Option<Result<Option<f64>, Error>> {
         if !self.finished && self.state.ip < self.program.len() {
-            let res = self.program[self.state.ip].eval(&mut self.state);
+            let res = self
+                .state
+                .eval(&self.program[self.state.ip], &mut self.input, self.debug);
 
             if res.is_err() {
                 self.finished = true;
