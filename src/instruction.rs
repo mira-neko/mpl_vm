@@ -81,14 +81,33 @@ impl Instructions {
         match self {
             Psh(n) => state.stack.push(*n),
             Pfa => state.stack.push(state.array[state.ap as usize]),
-            Pta => state.array[state.ap as usize] = state.stack.pop().ok_or(super::Error::PopFromEmptyStack)?,
+            Pta => {
+                state.array[state.ap as usize] =
+                    state.stack.pop().ok_or(super::Error::PopFromEmptyStack)?
+            }
             Gap => state.stack.push(state.ap as f64),
             Ptap => state.ap = state.stack.pop().ok_or(super::Error::PopFromEmptyStack)? as u8,
             Sap(n) => state.ap = *n,
-            Pek => res = Some(state.stack.last().copied().ok_or(super::Error::PopFromEmptyStack)?),
-            Inp => state.stack.push((state.input)().ok_or(super::Error::InputFailed)?),
-            Dup => state.stack.push(*state.stack.last().ok_or(super::Error::PopFromEmptyStack)?),
-            Pop => state.stack.pop().map(|_| ()).ok_or(super::Error::PopFromEmptyStack)?,
+            Pek => {
+                res = Some(
+                    state
+                        .stack
+                        .last()
+                        .copied()
+                        .ok_or(super::Error::PopFromEmptyStack)?,
+                )
+            }
+            Inp => state
+                .stack
+                .push((state.input)().ok_or(super::Error::InputFailed)?),
+            Dup => state
+                .stack
+                .push(*state.stack.last().ok_or(super::Error::PopFromEmptyStack)?),
+            Pop => state
+                .stack
+                .pop()
+                .map(|_| ())
+                .ok_or(super::Error::PopFromEmptyStack)?,
             Swp => {
                 let len = state.stack.len();
                 state.stack.swap(len - 1, len - 2)
@@ -141,13 +160,25 @@ impl Instructions {
                 state.ip = n.overflowing_sub(1).0
             }
             Jiz(n) => {
-                if state.stack.pop().ok_or(super::Error::PopFromEmptyStack)?.abs() <= 1E-7 {
+                if state
+                    .stack
+                    .pop()
+                    .ok_or(super::Error::PopFromEmptyStack)?
+                    .abs()
+                    <= 1E-7
+                {
                     state.call_stack.push(state.ip);
                     state.ip = n.overflowing_sub(1).0
                 }
             }
             Jnz(n) => {
-                if state.stack.pop().ok_or(super::Error::PopFromEmptyStack)?.abs() >= 1E-7 {
+                if state
+                    .stack
+                    .pop()
+                    .ok_or(super::Error::PopFromEmptyStack)?
+                    .abs()
+                    >= 1E-7
+                {
                     state.call_stack.push(state.ip);
                     state.ip = n.overflowing_sub(1).0
                 }
@@ -158,19 +189,34 @@ impl Instructions {
                 state.ip = state.array[state.ap as usize] as usize
             }
             Jiza => {
-                if state.stack.pop().ok_or(super::Error::PopFromEmptyStack)?.abs() <= 1E-7 {
+                if state
+                    .stack
+                    .pop()
+                    .ok_or(super::Error::PopFromEmptyStack)?
+                    .abs()
+                    <= 1E-7
+                {
                     state.call_stack.push(state.ip);
                     state.ip = state.array[state.ap as usize] as usize
                 }
             }
             Jnza => {
-                if state.stack.pop().ok_or(super::Error::PopFromEmptyStack)?.abs() >= 1E-7 {
+                if state
+                    .stack
+                    .pop()
+                    .ok_or(super::Error::PopFromEmptyStack)?
+                    .abs()
+                    >= 1E-7
+                {
                     state.call_stack.push(state.ip);
                     state.ip = state.array[state.ap as usize] as usize
                 }
             }
             Ret => {
-                state.ip = state.call_stack.pop().ok_or(super::Error::PopFromEmptyCallStack)?;
+                state.ip = state
+                    .call_stack
+                    .pop()
+                    .ok_or(super::Error::PopFromEmptyCallStack)?;
             }
         };
         state.ip = state.ip.overflowing_add(1).0;

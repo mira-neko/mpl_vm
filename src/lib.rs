@@ -1,7 +1,7 @@
 mod instruction;
 
-use std::fmt;
 pub use instruction::Instructions;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct State<F: FnMut() -> Option<f64>> {
@@ -21,7 +21,7 @@ pub struct Program<F: FnMut() -> Option<f64>> {
     finished: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     PopFromEmptyStack,
     PopFromEmptyCallStack,
@@ -46,7 +46,7 @@ impl<F: FnMut() -> Option<f64>> From<(Vec<Instructions>, F)> for Program<F> {
     }
 }
 
-impl<F: FnMut() -> Option<f64>>  From<(Vec<Instructions>, F, bool)> for Program<F> {
+impl<F: FnMut() -> Option<f64>> From<(Vec<Instructions>, F, bool)> for Program<F> {
     fn from((program, input, debug): (Vec<Instructions>, F, bool)) -> Program<F> {
         Program {
             program,
@@ -79,7 +79,7 @@ impl<F: FnMut() -> Option<f64>> Iterator for Program<F> {
         if !self.finished && self.state.ip < self.program.len() {
             let res = self.program[self.state.ip].eval(&mut self.state);
 
-            if let Err(_) = res {
+            if res.is_err() {
                 self.finished = true;
             }
 
@@ -113,13 +113,31 @@ mod test {
     fn test_factorial() {
         use Instructions::*;
 
-        let mut program = Program::from((vec![Psh(1.), Psh(1.), Max, Inp, Dup, Lsw(1), Mul, Swp, Psh(1.), Sub, Dup, Jnz(4), Pop, Pek], || Some(5.)));
+        let mut program = Program::from((
+            vec![
+                Psh(1.),
+                Psh(1.),
+                Max,
+                Inp,
+                Dup,
+                Lsw(1),
+                Mul,
+                Swp,
+                Psh(1.),
+                Sub,
+                Dup,
+                Jnz(4),
+                Pop,
+                Pek,
+            ],
+            || Some(5.),
+        ));
 
         assert_eq!(program.next(), Some(Ok(None)));
         assert_eq!(program.next(), Some(Ok(None)));
         assert_eq!(program.next(), Some(Ok(None)));
         assert_eq!(program.next(), Some(Ok(None)));
-        for _ in 0..(5*8) {
+        for _ in 0..(5 * 8) {
             assert_eq!(program.next(), Some(Ok(None)));
         }
         assert_eq!(program.next(), Some(Ok(None)));
