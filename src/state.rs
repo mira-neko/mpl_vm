@@ -104,6 +104,21 @@ impl State {
                 let fst = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
                 self.stack.push(fst.min(snd))
             }
+            Eql => {
+                let snd = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
+                let fst = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
+                self.stack.push(if (fst - snd).abs() < 1E-7 {1.} else {0.})
+            }
+            Mor => {
+                let snd = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
+                let fst = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
+                self.stack.push(if fst - 5E-8 > snd + 5E-8 {1.} else {0.})
+            }
+            Les => {
+                let snd = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
+                let fst = self.stack.pop().ok_or(super::Error::PopFromEmptyStack)?;
+                self.stack.push(if fst + 5E-8 < snd - 5E-8 {1.} else {0.})
+            }
             Jmp(n) => {
                 self.call_stack.push(self.ip);
                 self.ip = n.overflowing_sub(1).0
